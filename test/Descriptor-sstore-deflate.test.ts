@@ -8,7 +8,7 @@ import {
 chai.use(solidity);
 const { expect } = chai;
 
-describe("Descriptor MultiRLE SSTORE", () => {
+describe("Descriptor MultiRLE SSTORE Deflate", () => {
   it("deploy and populate", async () => {
     const nounsDescriptor = await deploySStoreDeflateNounsDescriptor();
 
