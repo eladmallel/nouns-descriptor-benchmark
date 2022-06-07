@@ -9,10 +9,14 @@ import {
   SVGRenderer__factory,
   MultiRleSStoreNounsDescriptor,
   MultiRleSStoreNounsDescriptor__factory,
+  SStoreDeflateNounsDescriptor,
+  SStoreDeflateNounsDescriptor__factory,
+  NounsArtDeflate__factory,
 } from "../typechain";
 import BaselineImageData from "../files/baseline-image-data.json";
 import MultiRleImageData from "../files/multi-rle-image-data.json";
 import { Block } from "@ethersproject/abstract-provider";
+import { deflateRawSync } from "zlib";
 
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -121,6 +125,40 @@ export const deployMultiRleSStoreNounsDescriptor = async (
   return descriptor;
 };
 
+export const deploySStoreDeflateNounsDescriptor = async (
+  deployer?: SignerWithAddress
+): Promise<SStoreDeflateNounsDescriptor> => {
+  const signer = deployer || (await getSigners()).deployer;
+  const nounsArtFactory = new NounsArtDeflate__factory(signer);
+  const nftDescriptorFactory = await ethers.getContractFactory(
+    "contracts/sstore-deflate/libs/NFTDescriptor.sol:NFTDescriptor",
+    signer
+  );
+
+  const svgRendererFactory = new SVGRenderer__factory(signer);
+
+  const nftDescriptorLibrary = await nftDescriptorFactory.deploy();
+  const nounsDescriptorFactory = new SStoreDeflateNounsDescriptor__factory(
+    {
+      "contracts/sstore-deflate/libs/NFTDescriptor.sol:NFTDescriptor":
+        nftDescriptorLibrary.address,
+    },
+    signer
+  );
+
+  const renderer = await svgRendererFactory.deploy();
+  const descriptor = await nounsDescriptorFactory.deploy(
+    ZERO_ADDRESS,
+    renderer.address
+  );
+
+  // TODO: Clean up the intialization process
+  const art = await nounsArtFactory.deploy(descriptor.address);
+  await descriptor.setArt(art.address);
+
+  return descriptor;
+};
+
 export const baselinePopulateDescriptor = async (
   nounsDescriptor: BaselineNounsDescriptor
 ): Promise<void> => {
@@ -173,9 +211,9 @@ export const multiRleSStorePopulateDescriptor = async (
     ["bytes[]"],
     [heads.map(({ data }) => data)]
   );
-  const headsLengthSum = heads.reduce((acc, head) => acc + head.data.length, 0);
-  console.log(`headsLengthSum: ${headsLengthSum}`);
-  console.log(`headsEncoded len: ${headsEncoded.length}`);
+  // const headsLengthSum = heads.reduce((acc, head) => acc + head.data.length, 0);
+  // console.log(`headsLengthSum: ${headsLengthSum}`);
+  // console.log(`headsEncoded len: ${headsEncoded.length}`);
 
   // TODO: this fails because headsEncoded is too long
   // leaving it here so the test fails, so we might fix it by splitting heads up into a few chunks
@@ -194,6 +232,36 @@ export const multiRleSStorePopulateDescriptor = async (
     nounsDescriptor.addManyGlasses(glasses.map(({ data }) => data)),
   ]);
 };
+
+export const sStoreDeflatePopulateDescriptor = async (
+  nounsDescriptor: SStoreDeflateNounsDescriptor
+): Promise<void> => {
+  const { bgcolors, palette, images } = MultiRleImageData;
+  const { bodies, accessories, heads, glasses } = images;
+
+  // Split up head and accessory population due to high gas usage
+  await Promise.all([
+    nounsDescriptor.addManyBackgrounds(bgcolors),
+    nounsDescriptor.setPalette(0, `0x000000${palette.join("")}`),
+    nounsDescriptor.setHeads(dataToDeflateHex(heads.map(({ data }) => data)), {
+      gasLimit: 30_000_000,
+    }),
+    nounsDescriptor.setBodies(dataToDeflateHex(bodies.map(({ data }) => data))),
+    nounsDescriptor.setAccessories(
+      dataToDeflateHex(accessories.map(({ data }) => data))
+    ),
+    nounsDescriptor.setGlasses(
+      dataToDeflateHex(glasses.map(({ data }) => data))
+    ),
+  ]);
+};
+
+function dataToDeflateHex(data: string[]): string {
+  const abiEncoded = ethers.utils.defaultAbiCoder.encode(["bytes[]"], [data]);
+  return `0x${deflateRawSync(
+    Buffer.from(abiEncoded.substring(2), "hex")
+  ).toString("hex")}`;
+}
 
 const rpc = <T = unknown>({
   method,
