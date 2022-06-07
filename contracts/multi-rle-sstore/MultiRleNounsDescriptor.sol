@@ -150,16 +150,12 @@ contract MultiRleSStoreNounsDescriptor is INounsDescriptor, Ownable {
     art.addManyBodies(bodies);
   }
 
-  /**
-   * @notice Batch add Noun accessories.
-   * @dev This function can only be called by the owner when not locked.
-   */
-  function addManyAccessories(bytes[] calldata accessories)
+  function setAccessories(bytes calldata accessories)
     external
     onlyOwner
     whenPartsNotLocked
   {
-    art.addManyAccessories(accessories);
+    art.setAccessories(SSTORE2.write(accessories));
   }
 
   /**
@@ -171,9 +167,7 @@ contract MultiRleSStoreNounsDescriptor is INounsDescriptor, Ownable {
     onlyOwner
     whenPartsNotLocked
   {
-    address pointer = SSTORE2.write(heads);
-
-    art.setHeads(pointer);
+    art.setHeads(SSTORE2.write(heads));
   }
 
   /**

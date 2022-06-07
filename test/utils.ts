@@ -211,24 +211,17 @@ export const multiRleSStorePopulateDescriptor = async (
     ["bytes[]"],
     [heads.map(({ data }) => data)]
   );
-  // const headsLengthSum = heads.reduce((acc, head) => acc + head.data.length, 0);
-  // console.log(`headsLengthSum: ${headsLengthSum}`);
-  // console.log(`headsEncoded len: ${headsEncoded.length}`);
+  const accessoriesEncoded = ethers.utils.defaultAbiCoder.encode(
+    ["bytes[]"],
+    [accessories.map(({ data }) => data)]
+  );
 
-  // TODO: this fails because headsEncoded is too long
-  // leaving it here so the test fails, so we might fix it by splitting heads up into a few chunks
-  // current length is 120706 characters which is roughly 60K bytes
-  // so I think we need 3 SSTORE chunks.
-  await nounsDescriptor.setHeads(headsEncoded, { gasLimit: 30_000_000 });
-
-  // Split up head and accessory population due to high gas usage
   await Promise.all([
+    nounsDescriptor.setHeads(headsEncoded),
+    nounsDescriptor.setAccessories(accessoriesEncoded),
     nounsDescriptor.addManyBackgrounds(bgcolors),
     nounsDescriptor.setPalette(0, `0x000000${palette.join("")}`),
     nounsDescriptor.addManyBodies(bodies.map(({ data }) => data)),
-    chunkArray(accessories, 10).map((chunk) =>
-      nounsDescriptor.addManyAccessories(chunk.map(({ data }) => data))
-    ),
     nounsDescriptor.addManyGlasses(glasses.map(({ data }) => data)),
   ]);
 };

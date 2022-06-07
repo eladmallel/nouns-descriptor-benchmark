@@ -56,7 +56,7 @@ interface INounsArt {
 
   function addManyBodies(bytes[] calldata bodies) external;
 
-  function addManyAccessories(bytes[] calldata accessories) external;
+  function setAccessories(address _accessoriesStorage) external;
 
   function setHeads(address _headsStorage) external;
 

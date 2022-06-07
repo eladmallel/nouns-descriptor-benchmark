@@ -54,7 +54,7 @@ interface INounsDescriptor {
 
   function addManyBodies(bytes[] calldata bodies) external;
 
-  function addManyAccessories(bytes[] calldata accessories) external;
+  function setAccessories(bytes calldata accessories) external;
 
   function setHeads(bytes calldata heads) external;
 

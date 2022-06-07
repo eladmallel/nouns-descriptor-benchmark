@@ -28,6 +28,7 @@ contract NounsArt is INounsArt {
   mapping(uint8 => address) public palettes;
 
   address public headsStorage;
+  address public accessoriesStorage;
 
   // Noun Backgrounds (Hex Colors)
   string[] public backgrounds;
@@ -169,6 +170,10 @@ contract NounsArt is INounsArt {
     for (uint256 i = 0; i < _accessories.length; i++) {
       _addAccessory(_accessories[i]);
     }
+  }
+
+  function setAccessories(address _accessoriesStorage) external onlyDescriptor {
+    accessoriesStorage = _accessoriesStorage;
   }
 
   /**
