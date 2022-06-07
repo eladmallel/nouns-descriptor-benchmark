@@ -7,6 +7,8 @@ import {
   MultiRleNounsDescriptor__factory,
   NounsArt__factory,
   SVGRenderer__factory,
+  MultiRleSStoreNounsDescriptor,
+  MultiRleSStoreNounsDescriptor__factory,
 } from "../typechain";
 import BaselineImageData from "../files/baseline-image-data.json";
 import MultiRleImageData from "../files/multi-rle-image-data.json";
@@ -56,7 +58,6 @@ export const deployMultiRleNounsDescriptor = async (
 ): Promise<MultiRleNounsDescriptor> => {
   const signer = deployer || (await getSigners()).deployer;
   const nounsArtFactory = new NounsArt__factory(signer);
-  // const nftDescriptorFactory = new NFTDescriptor__factory(signer);
   const nftDescriptorFactory = await ethers.getContractFactory(
     "contracts/multi-rle/libs/NFTDescriptor.sol:NFTDescriptor",
     signer
@@ -68,6 +69,40 @@ export const deployMultiRleNounsDescriptor = async (
   const nounsDescriptorFactory = new MultiRleNounsDescriptor__factory(
     {
       "contracts/multi-rle/libs/NFTDescriptor.sol:NFTDescriptor":
+        nftDescriptorLibrary.address,
+    },
+    signer
+  );
+
+  const renderer = await svgRendererFactory.deploy();
+  const descriptor = await nounsDescriptorFactory.deploy(
+    ZERO_ADDRESS,
+    renderer.address
+  );
+
+  // TODO: Clean up the intialization process
+  const art = await nounsArtFactory.deploy(descriptor.address);
+  await descriptor.setArt(art.address);
+
+  return descriptor;
+};
+
+export const deployMultiRleSStoreNounsDescriptor = async (
+  deployer?: SignerWithAddress
+): Promise<MultiRleSStoreNounsDescriptor> => {
+  const signer = deployer || (await getSigners()).deployer;
+  const nounsArtFactory = new NounsArt__factory(signer);
+  const nftDescriptorFactory = await ethers.getContractFactory(
+    "contracts/multi-rle-sstore/libs/NFTDescriptor.sol:NFTDescriptor",
+    signer
+  );
+
+  const svgRendererFactory = new SVGRenderer__factory(signer);
+
+  const nftDescriptorLibrary = await nftDescriptorFactory.deploy();
+  const nounsDescriptorFactory = new MultiRleSStoreNounsDescriptor__factory(
+    {
+      "contracts/multi-rle-sstore/libs/NFTDescriptor.sol:NFTDescriptor":
         nftDescriptorLibrary.address,
     },
     signer
@@ -123,6 +158,38 @@ export const multiRlePopulateDescriptor = async (
     ),
     chunkArray(heads, 10).map((chunk) =>
       nounsDescriptor.addManyHeads(chunk.map(({ data }) => data))
+    ),
+    nounsDescriptor.addManyGlasses(glasses.map(({ data }) => data)),
+  ]);
+};
+
+export const multiRleSStorePopulateDescriptor = async (
+  nounsDescriptor: MultiRleSStoreNounsDescriptor
+): Promise<void> => {
+  const { bgcolors, palette, images } = MultiRleImageData;
+  const { bodies, accessories, heads, glasses } = images;
+
+  const headsEncoded = ethers.utils.defaultAbiCoder.encode(
+    ["bytes[]"],
+    [heads.map(({ data }) => data)]
+  );
+  const headsLengthSum = heads.reduce((acc, head) => acc + head.data.length, 0);
+  console.log(`headsLengthSum: ${headsLengthSum}`);
+  console.log(`headsEncoded len: ${headsEncoded.length}`);
+
+  // TODO: this fails because headsEncoded is too long
+  // leaving it here so the test fails, so we might fix it by splitting heads up into a few chunks
+  // current length is 120706 characters which is roughly 60K bytes
+  // so I think we need 3 SSTORE chunks.
+  await nounsDescriptor.setHeads(headsEncoded, { gasLimit: 30_000_000 });
+
+  // Split up head and accessory population due to high gas usage
+  await Promise.all([
+    nounsDescriptor.addManyBackgrounds(bgcolors),
+    nounsDescriptor.setPalette(0, `0x000000${palette.join("")}`),
+    nounsDescriptor.addManyBodies(bodies.map(({ data }) => data)),
+    chunkArray(accessories, 10).map((chunk) =>
+      nounsDescriptor.addManyAccessories(chunk.map(({ data }) => data))
     ),
     nounsDescriptor.addManyGlasses(glasses.map(({ data }) => data)),
   ]);
