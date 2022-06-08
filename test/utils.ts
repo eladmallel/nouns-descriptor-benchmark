@@ -17,6 +17,7 @@ import {
 } from "../typechain";
 import BaselineImageData from "../files/baseline-image-data.json";
 import MultiRleImageData from "../files/multi-rle-image-data.json";
+import MergedImageData from "../files/merged-image-data.json";
 import { Block } from "@ethersproject/abstract-provider";
 import { deflateRawSync } from "zlib";
 
@@ -235,6 +236,27 @@ export const sStoreDeflatePopulateDescriptor = async (
   nounsDescriptor: SStoreDeflateNounsDescriptor
 ): Promise<void> => {
   const { bgcolors, palette, images } = MultiRleImageData;
+  await populateDeflate(nounsDescriptor, bgcolors, palette, images);
+};
+
+export const sStoreDeflatePopulateDescriptorWithMultiDirRLE = async (
+  nounsDescriptor: SStoreDeflateNounsDescriptor
+): Promise<void> => {
+  const { bgcolors, palette, images } = MergedImageData;
+  await populateDeflate(nounsDescriptor, bgcolors, palette, images);
+};
+
+const populateDeflate = async (
+  nounsDescriptor: SStoreDeflateNounsDescriptor,
+  bgcolors: string[],
+  palette: string[],
+  images: {
+    bodies: { filename: string; data: string }[];
+    accessories: { filename: string; data: string }[];
+    heads: { filename: string; data: string }[];
+    glasses: { filename: string; data: string }[];
+  }
+): Promise<void> => {
   const { bodies, accessories, heads, glasses } = images;
 
   const {
