@@ -131,144 +131,36 @@ contract SStoreDeflateNounsDescriptor is INounsDescriptor, Ownable {
     art.addManyBackgrounds(backgrounds);
   }
 
-  /**
-   * @notice Batch add Noun bodies.
-   * @dev This function can only be called by the owner when not locked.
-   */
-  function addManyBodies(INounsArt.NounArt[] calldata bodies)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.addManyBodies(bodies);
+  function setHeads(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external onlyOwner whenPartsNotLocked {
+    art.setHeads(encodedCompressed, originalLength, itemCount);
   }
 
-  /**
-   * @notice Batch add Noun accessories.
-   * @dev This function can only be called by the owner when not locked.
-   */
-  function addManyAccessories(INounsArt.NounArt[] calldata accessories)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.addManyAccessories(accessories);
+  function setGlasses(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external onlyOwner whenPartsNotLocked {
+    art.setGlasses(encodedCompressed, originalLength, itemCount);
   }
 
-  /**
-   * @notice Batch add Noun heads.
-   * @dev This function can only be called by the owner when not locked.
-   */
-  function addManyHeads(INounsArt.NounArt[] calldata heads)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.addManyHeads(heads);
+  function setAccessories(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external onlyOwner whenPartsNotLocked {
+    art.setAccessories(encodedCompressed, originalLength, itemCount);
   }
 
-  /**
-   * @notice Batch add Noun glasses.
-   * @dev This function can only be called by the owner when not locked.
-   */
-  function addManyGlasses(INounsArt.NounArt[] calldata glasses)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.addManyGlasses(glasses);
-  }
-
-  /**
-   * @notice Add a Noun background.
-   * @dev This function can only be called by the owner when not locked.
-   */
-  function addBackground(string calldata background)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.addBackground(background);
-  }
-
-  /**
-   * @notice Add a Noun body.
-   * @dev This function can only be called by the owner when not locked.
-   */
-  function addBody(INounsArt.NounArt calldata body)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.addBody(body);
-  }
-
-  /**
-   * @notice Add a Noun accessory.
-   * @dev This function can only be called by the owner when not locked.
-   */
-  function addAccessory(INounsArt.NounArt calldata accessory)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.addAccessory(accessory);
-  }
-
-  /**
-   * @notice Add a Noun head.
-   * @dev This function can only be called by the owner when not locked.
-   */
-  function addHead(INounsArt.NounArt calldata head)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.addHead(head);
-  }
-
-  function setHeads(bytes calldata headsEncodedCompressed)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.setHeads(headsEncodedCompressed);
-  }
-
-  function setGlasses(bytes calldata glassesEncodedCompressed)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.setGlasses(glassesEncodedCompressed);
-  }
-
-  function setAccessories(bytes calldata accessoriesEncodedCompressed)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.setAccessories(accessoriesEncodedCompressed);
-  }
-
-  function setBodies(bytes calldata bodiesEncodedCompressed)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.setBodies(bodiesEncodedCompressed);
-  }
-
-  /**
-   * @notice Add Noun glasses.
-   * @dev This function can only be called by the owner when not locked.
-   */
-  function addGlasses(INounsArt.NounArt calldata glasses)
-    external
-    onlyOwner
-    whenPartsNotLocked
-  {
-    art.addGlasses(glasses);
+  function setBodies(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external onlyOwner whenPartsNotLocked {
+    art.setBodies(encodedCompressed, originalLength, itemCount);
   }
 
   /**
@@ -279,6 +171,13 @@ contract SStoreDeflateNounsDescriptor is INounsDescriptor, Ownable {
     arePartsLocked = true;
 
     emit PartsLocked();
+  }
+
+  function tokenURITx(uint256 tokenId, INounsSeeder.Seed memory seed)
+    external
+    returns (string memory)
+  {
+    return dataURI(tokenId, seed);
   }
 
   /**

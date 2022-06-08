@@ -32,22 +32,10 @@ contract NounsArtDeflate is INounsArt {
   // Noun Backgrounds (Hex Colors)
   string[] public backgrounds;
 
-  // Noun Bodies Pointers (DEFLATE-Compressed Custom RLE)
-  NounArtPointer[] private _bodies;
-
-  // Noun Accessories Pointers (DEFLATE-Compressed Custom RLE)
-  NounArtPointer[] private _accessories;
-
-  // Noun Heads Pointers (DEFLATE-Compressed Custom RLE)
-  NounArtPointer[] private _heads;
-
-  address private _headsPointer;
-  address private _glassesPointer;
-  address private _accessoriesPointer;
-  address private _bodiesPointer;
-
-  // Noun Glasses Pointers (DEFLATE-Compressed Custom RLE)
-  NounArtPointer[] private _glasses;
+  NounArtPointer private _headsPointer;
+  NounArtPointer private _glassesPointer;
+  NounArtPointer private _accessoriesPointer;
+  NounArtPointer private _bodiesPointer;
 
   // Current Nouns Descriptor address
   address public descriptor;
@@ -98,32 +86,52 @@ contract NounsArtDeflate is INounsArt {
    * @notice Get a Noun body by `index`.
    */
   function bodies(uint256 index) external view returns (bytes memory) {
-    bytes memory body = SSTORE2.read(_bodies[index].pointer);
-    return decompress(body, _bodies[index].length);
+    NounArtPointer storage artPointer = _bodiesPointer;
+
+    bytes memory deflatedBytes = SSTORE2.read(artPointer.pointer);
+    bytes memory inflatedBytes = decompress(deflatedBytes, artPointer.length);
+
+    bytes[] memory art = abi.decode(inflatedBytes, (bytes[]));
+    return art[index];
   }
 
   /**
    * @notice Get a Noun accessory by `index`.
    */
   function accessories(uint256 index) external view returns (bytes memory) {
-    bytes memory accessory = SSTORE2.read(_accessories[index].pointer);
-    return decompress(accessory, _accessories[index].length);
+    NounArtPointer storage artPointer = _accessoriesPointer;
+
+    bytes memory deflatedBytes = SSTORE2.read(artPointer.pointer);
+    bytes memory inflatedBytes = decompress(deflatedBytes, artPointer.length);
+
+    bytes[] memory art = abi.decode(inflatedBytes, (bytes[]));
+    return art[index];
   }
 
   /**
    * @notice Get a Noun head by `index`.
    */
   function heads(uint256 index) external view returns (bytes memory) {
-    bytes memory head = SSTORE2.read(_heads[index].pointer);
-    return decompress(head, _heads[index].length);
+    NounArtPointer storage artPointer = _headsPointer;
+
+    bytes memory deflatedBytes = SSTORE2.read(artPointer.pointer);
+    bytes memory inflatedBytes = decompress(deflatedBytes, artPointer.length);
+
+    bytes[] memory art = abi.decode(inflatedBytes, (bytes[]));
+    return art[index];
   }
 
   /**
    * @notice Get Noun glasses by `index`.
    */
   function glasses(uint256 index) external view returns (bytes memory) {
-    bytes memory glasses_ = SSTORE2.read(_glasses[index].pointer);
-    return decompress(glasses_, _glasses[index].length);
+    NounArtPointer storage artPointer = _glassesPointer;
+
+    bytes memory deflatedBytes = SSTORE2.read(artPointer.pointer);
+    bytes memory inflatedBytes = decompress(deflatedBytes, artPointer.length);
+
+    bytes[] memory art = abi.decode(inflatedBytes, (bytes[]));
+    return art[index];
   }
 
   /**
@@ -137,28 +145,28 @@ contract NounsArtDeflate is INounsArt {
    * @notice Get the number of available Noun `bodies`.
    */
   function bodyCount() external view returns (uint256) {
-    return _bodies.length;
+    return _bodiesPointer.count;
   }
 
   /**
    * @notice Get the number of available Noun `accessories`.
    */
   function accessoryCount() external view returns (uint256) {
-    return _accessories.length;
+    return _accessoriesPointer.count;
   }
 
   /**
    * @notice Get the number of available Noun `heads`.
    */
   function headCount() external view returns (uint256) {
-    return _heads.length;
+    return _headsPointer.count;
   }
 
   /**
    * @notice Get the number of available Noun `glasses`.
    */
   function glassesCount() external view returns (uint256) {
-    return _glasses.length;
+    return _glassesPointer.count;
   }
 
   /**
@@ -204,115 +212,52 @@ contract NounsArtDeflate is INounsArt {
     }
   }
 
-  /**
-   * @notice Batch add Noun bodies.
-   * @dev This function can only be called by the descriptor.
-   */
-  function addManyBodies(NounArt[] calldata bodies_) external onlyDescriptor {
-    for (uint256 i = 0; i < bodies_.length; i++) {
-      _addBody(bodies_[i]);
-    }
+  function setHeads(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external onlyDescriptor {
+    _headsPointer = NounArtPointer({
+      pointer: SSTORE2.write(encodedCompressed),
+      length: originalLength,
+      count: itemCount
+    });
   }
 
-  /**
-   * @notice Batch add Noun accessories.
-   * @dev This function can only be called by the descriptor.
-   */
-  function addManyAccessories(NounArt[] calldata accessories_)
-    external
-    onlyDescriptor
-  {
-    for (uint256 i = 0; i < accessories_.length; i++) {
-      _addAccessory(accessories_[i]);
-    }
+  function setGlasses(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external onlyDescriptor {
+    _glassesPointer = NounArtPointer({
+      pointer: SSTORE2.write(encodedCompressed),
+      length: originalLength,
+      count: itemCount
+    });
   }
 
-  /**
-   * @notice Batch add Noun heads.
-   * @dev This function can only be called by the descriptor.
-   */
-  function addManyHeads(NounArt[] calldata heads_) external onlyDescriptor {
-    for (uint256 i = 0; i < heads_.length; i++) {
-      _addHead(heads_[i]);
-    }
+  function setAccessories(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external onlyDescriptor {
+    _accessoriesPointer = NounArtPointer({
+      pointer: SSTORE2.write(encodedCompressed),
+      length: originalLength,
+      count: itemCount
+    });
   }
 
-  /**
-   * @notice Batch add Noun glasses.
-   * @dev This function can only be called by the descriptor.
-   */
-  function addManyGlasses(NounArt[] calldata glasses_) external onlyDescriptor {
-    for (uint256 i = 0; i < glasses_.length; i++) {
-      _addGlasses(glasses_[i]);
-    }
-  }
-
-  /**
-   * @notice Add a Noun background.
-   * @dev This function can only be called by the descriptor.
-   */
-  function addBackground(string calldata background_) external onlyDescriptor {
-    _addBackground(background_);
-  }
-
-  /**
-   * @notice Add a Noun body.
-   * @dev This function can only be called by the descriptor.
-   */
-  function addBody(NounArt calldata body_) external onlyDescriptor {
-    _addBody(body_);
-  }
-
-  /**
-   * @notice Add a Noun accessory.
-   * @dev This function can only be called by the descriptor.
-   */
-  function addAccessory(NounArt calldata accessory_) external onlyDescriptor {
-    _addAccessory(accessory_);
-  }
-
-  /**
-   * @notice Add a Noun head.
-   * @dev This function can only be called by the descriptor.
-   */
-  function addHead(NounArt calldata head_) external onlyDescriptor {
-    _addHead(head_);
-  }
-
-  function setHeads(bytes calldata headsEncodedCompressed)
-    external
-    onlyDescriptor
-  {
-    _headsPointer = SSTORE2.write(headsEncodedCompressed);
-  }
-
-  function setGlasses(bytes calldata glassesEncodedCompressed)
-    external
-    onlyDescriptor
-  {
-    _glassesPointer = SSTORE2.write(glassesEncodedCompressed);
-  }
-
-  function setAccessories(bytes calldata accessoriesEncodedCompressed)
-    external
-    onlyDescriptor
-  {
-    _accessoriesPointer = SSTORE2.write(accessoriesEncodedCompressed);
-  }
-
-  function setBodies(bytes calldata bodiesEncodedCompressed)
-    external
-    onlyDescriptor
-  {
-    _bodiesPointer = SSTORE2.write(bodiesEncodedCompressed);
-  }
-
-  /**
-   * @notice Add Noun glasses.
-   * @dev This function can only be called by the descriptor.
-   */
-  function addGlasses(NounArt calldata glasses_) external onlyDescriptor {
-    _addGlasses(glasses_);
+  function setBodies(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external onlyDescriptor {
+    _bodiesPointer = NounArtPointer({
+      pointer: SSTORE2.write(encodedCompressed),
+      length: originalLength,
+      count: itemCount
+    });
   }
 
   /**
@@ -322,51 +267,51 @@ contract NounsArtDeflate is INounsArt {
     backgrounds.push(background_);
   }
 
-  /**
-   * @notice Add a Noun body.
-   */
-  function _addBody(NounArt calldata body_) internal {
-    _bodies.push(
-      NounArtPointer({
-        length: body_.length,
-        pointer: SSTORE2.write((body_.data))
-      })
-    );
-  }
+  // /**
+  //  * @notice Add a Noun body.
+  //  */
+  // function _addBody(NounArt calldata body_) internal {
+  //   _bodies.push(
+  //     NounArtPointer({
+  //       length: body_.length,
+  //       pointer: SSTORE2.write((body_.data))
+  //     })
+  //   );
+  // }
 
-  /**
-   * @notice Add a Noun accessory.
-   */
-  function _addAccessory(NounArt calldata accessory_) internal {
-    _accessories.push(
-      NounArtPointer({
-        length: accessory_.length,
-        pointer: SSTORE2.write((accessory_.data))
-      })
-    );
-  }
+  // /**
+  //  * @notice Add a Noun accessory.
+  //  */
+  // function _addAccessory(NounArt calldata accessory_) internal {
+  //   _accessories.push(
+  //     NounArtPointer({
+  //       length: accessory_.length,
+  //       pointer: SSTORE2.write((accessory_.data))
+  //     })
+  //   );
+  // }
 
-  /**
-   * @notice Add a Noun head.
-   */
-  function _addHead(NounArt calldata head_) internal {
-    _heads.push(
-      NounArtPointer({
-        length: head_.length,
-        pointer: SSTORE2.write((head_.data))
-      })
-    );
-  }
+  // /**
+  //  * @notice Add a Noun head.
+  //  */
+  // function _addHead(NounArt calldata head_) internal {
+  //   _heads.push(
+  //     NounArtPointer({
+  //       length: head_.length,
+  //       pointer: SSTORE2.write((head_.data))
+  //     })
+  //   );
+  // }
 
-  /**
-   * @notice Add Noun glasses.
-   */
-  function _addGlasses(NounArt calldata glasses_) internal {
-    _glasses.push(
-      NounArtPointer({
-        length: glasses_.length,
-        pointer: SSTORE2.write((glasses_.data))
-      })
-    );
-  }
+  // /**
+  //  * @notice Add Noun glasses.
+  //  */
+  // function _addGlasses(NounArt calldata glasses_) internal {
+  //   _glasses.push(
+  //     NounArtPointer({
+  //       length: glasses_.length,
+  //       pointer: SSTORE2.write((glasses_.data))
+  //     })
+  //   );
+  // }
 }

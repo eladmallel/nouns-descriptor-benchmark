@@ -34,7 +34,8 @@ interface INounsArt {
   }
 
   struct NounArtPointer {
-    uint96 length;
+    uint16 count;
+    uint80 length;
     address pointer;
   }
 
@@ -72,29 +73,27 @@ interface INounsArt {
 
   function addManyBackgrounds(string[] calldata backgrounds) external;
 
-  function addManyBodies(NounArt[] calldata bodies) external;
+  function setBodies(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external;
 
-  function addManyAccessories(NounArt[] calldata accessories) external;
+  function setAccessories(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external;
 
-  function addManyHeads(NounArt[] calldata heads) external;
+  function setHeads(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external;
 
-  function addManyGlasses(NounArt[] calldata glasses) external;
-
-  function addBackground(string calldata background) external;
-
-  function addBody(NounArt calldata body) external;
-
-  function setBodies(bytes calldata bodiesEncodedCompressed) external;
-
-  function addAccessory(NounArt calldata accessory) external;
-
-  function setAccessories(bytes calldata accessoriesEncodedCompressed) external;
-
-  function addHead(NounArt calldata head) external;
-
-  function setHeads(bytes calldata headsEncodedCompressed) external;
-
-  function addGlasses(NounArt calldata glasses) external;
-
-  function setGlasses(bytes calldata glassesEncodedCompressed) external;
+  function setGlasses(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external;
 }

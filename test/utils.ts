@@ -13,6 +13,7 @@ import {
   SStoreDeflateNounsDescriptor__factory,
   NounsArtDeflate__factory,
   MultiRleNounsArt__factory,
+  NounsArtDeflate,
 } from "../typechain";
 import BaselineImageData from "../files/baseline-image-data.json";
 import MultiRleImageData from "../files/multi-rle-image-data.json";
@@ -128,7 +129,10 @@ export const deployMultiRleSStoreNounsDescriptor = async (
 
 export const deploySStoreDeflateNounsDescriptor = async (
   deployer?: SignerWithAddress
-): Promise<SStoreDeflateNounsDescriptor> => {
+): Promise<{
+  descriptor: SStoreDeflateNounsDescriptor;
+  art: NounsArtDeflate;
+}> => {
   const signer = deployer || (await getSigners()).deployer;
   const nounsArtFactory = new NounsArtDeflate__factory(signer);
   const nftDescriptorFactory = await ethers.getContractFactory(
@@ -157,7 +161,7 @@ export const deploySStoreDeflateNounsDescriptor = async (
   const art = await nounsArtFactory.deploy(descriptor.address);
   await descriptor.setArt(art.address);
 
-  return descriptor;
+  return { descriptor, art };
 };
 
 export const baselinePopulateDescriptor = async (
@@ -233,28 +237,63 @@ export const sStoreDeflatePopulateDescriptor = async (
   const { bgcolors, palette, images } = MultiRleImageData;
   const { bodies, accessories, heads, glasses } = images;
 
+  const {
+    encodedCompressed: headsCompressed,
+    originalLength: headsLength,
+    itemCount: headsCount,
+  } = dataToDescriptorInput(heads.map(({ data }) => data));
+
+  const {
+    encodedCompressed: bodiesCompressed,
+    originalLength: bodiesLength,
+    itemCount: bodiesCount,
+  } = dataToDescriptorInput(bodies.map(({ data }) => data));
+
+  const {
+    encodedCompressed: accessoriesCompressed,
+    originalLength: accessoriesLength,
+    itemCount: accessoriesCount,
+  } = dataToDescriptorInput(accessories.map(({ data }) => data));
+
+  const {
+    encodedCompressed: glassesCompressed,
+    originalLength: glassesLength,
+    itemCount: glassesCount,
+  } = dataToDescriptorInput(glasses.map(({ data }) => data));
+
   // Split up head and accessory population due to high gas usage
   await Promise.all([
     nounsDescriptor.addManyBackgrounds(bgcolors),
     nounsDescriptor.setPalette(0, `0x000000${palette.join("")}`),
-    nounsDescriptor.setHeads(dataToDeflateHex(heads.map(({ data }) => data)), {
-      gasLimit: 30_000_000,
-    }),
-    nounsDescriptor.setBodies(dataToDeflateHex(bodies.map(({ data }) => data))),
+    nounsDescriptor.setHeads(headsCompressed, headsLength, headsCount),
+    nounsDescriptor.setBodies(bodiesCompressed, bodiesLength, bodiesCount),
     nounsDescriptor.setAccessories(
-      dataToDeflateHex(accessories.map(({ data }) => data))
+      accessoriesCompressed,
+      accessoriesLength,
+      accessoriesCount
     ),
-    nounsDescriptor.setGlasses(
-      dataToDeflateHex(glasses.map(({ data }) => data))
-    ),
+    nounsDescriptor.setGlasses(glassesCompressed, glassesLength, glassesCount),
   ]);
 };
 
-function dataToDeflateHex(data: string[]): string {
+function dataToDescriptorInput(data: string[]): {
+  encodedCompressed: string;
+  originalLength: number;
+  itemCount: number;
+} {
   const abiEncoded = ethers.utils.defaultAbiCoder.encode(["bytes[]"], [data]);
-  return `0x${deflateRawSync(
+  const encodedCompressed = `0x${deflateRawSync(
     Buffer.from(abiEncoded.substring(2), "hex")
   ).toString("hex")}`;
+
+  const originalLength = abiEncoded.substring(2).length / 2;
+  const itemCount = data.length;
+
+  return {
+    encodedCompressed,
+    originalLength,
+    itemCount,
+  };
 }
 
 const rpc = <T = unknown>({

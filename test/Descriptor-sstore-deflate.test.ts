@@ -10,8 +10,8 @@ const { expect } = chai;
 
 describe("Descriptor MultiRLE SSTORE Deflate", () => {
   it("deploy and populate", async () => {
-    const nounsDescriptor = await deploySStoreDeflateNounsDescriptor();
+    const { descriptor } = await deploySStoreDeflateNounsDescriptor();
 
-    await sStoreDeflatePopulateDescriptor(nounsDescriptor);
+    await sStoreDeflatePopulateDescriptor(descriptor);
   });
 });

@@ -54,32 +54,29 @@ interface INounsDescriptor {
 
   function addManyBackgrounds(string[] calldata backgrounds) external;
 
-  function addManyBodies(INounsArt.NounArt[] calldata bodies) external;
+  function setBodies(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external;
 
-  function addManyAccessories(INounsArt.NounArt[] calldata accessories)
-    external;
+  function setAccessories(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external;
 
-  function addManyHeads(INounsArt.NounArt[] calldata heads) external;
+  function setHeads(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external;
 
-  function addManyGlasses(INounsArt.NounArt[] calldata glasses) external;
-
-  function addBackground(string calldata background) external;
-
-  function addBody(INounsArt.NounArt calldata body) external;
-
-  function setBodies(bytes calldata bodiesEncodedCompressed) external;
-
-  function addAccessory(INounsArt.NounArt calldata accessory) external;
-
-  function setAccessories(bytes calldata accessoriesEncodedCompressed) external;
-
-  function addHead(INounsArt.NounArt calldata head) external;
-
-  function setHeads(bytes calldata headsEncodedCompressed) external;
-
-  function addGlasses(INounsArt.NounArt calldata glasses) external;
-
-  function setGlasses(bytes calldata glassesEncodedCompressed) external;
+  function setGlasses(
+    bytes calldata encodedCompressed,
+    uint80 originalLength,
+    uint16 itemCount
+  ) external;
 
   function lockParts() external;
 
