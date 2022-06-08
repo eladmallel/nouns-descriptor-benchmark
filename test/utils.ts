@@ -12,6 +12,7 @@ import {
   SStoreDeflateNounsDescriptor,
   SStoreDeflateNounsDescriptor__factory,
   NounsArtDeflate__factory,
+  MultiRleNounsArt__factory,
 } from "../typechain";
 import BaselineImageData from "../files/baseline-image-data.json";
 import MultiRleImageData from "../files/multi-rle-image-data.json";
@@ -61,7 +62,7 @@ export const deployMultiRleNounsDescriptor = async (
   deployer?: SignerWithAddress
 ): Promise<MultiRleNounsDescriptor> => {
   const signer = deployer || (await getSigners()).deployer;
-  const nounsArtFactory = new NounsArt__factory(signer);
+  const nounsArtFactory = new MultiRleNounsArt__factory(signer);
   const nftDescriptorFactory = await ethers.getContractFactory(
     "contracts/multi-rle/libs/NFTDescriptor.sol:NFTDescriptor",
     signer

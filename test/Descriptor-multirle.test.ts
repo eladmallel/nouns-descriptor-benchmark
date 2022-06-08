@@ -12,6 +12,6 @@ describe("Descriptor MultiRLE", () => {
   it("deploy and populate", async () => {
     const nounsDescriptor = await deployMultiRleNounsDescriptor();
 
-    // await multiRlePopulateDescriptor(nounsDescriptor);
+    await multiRlePopulateDescriptor(nounsDescriptor);
   });
 });
