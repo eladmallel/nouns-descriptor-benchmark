@@ -8,8 +8,8 @@ import {
 chai.use(solidity);
 const { expect } = chai;
 
-describe("Descriptor MultiRLE SSTORE Deflate", () => {
-  it("deploy and populate", async () => {
+describe("Deflate tokenURI", () => {
+  it("tokenURITx", async () => {
     const { descriptor, art } = await deploySStoreDeflateNounsDescriptor();
 
     await sStoreDeflatePopulateDescriptor(descriptor);

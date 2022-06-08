@@ -58,9 +58,10 @@ Descriptor MultiRLE
 
 # Results on 2022-06-07
 
-| Test                               | Gas sum    |
-| ---------------------------------- | ---------- |
-| Descriptor baseline                | 67,285,651 |
-| Descriptor MultiRLE                | 59,540,610 |
-| Descriptor MultiRLE SSTORE         | 28,079,493 |
-| Descriptor MultiRLE SSTORE Deflate | 14,368,017 |
+| Test                               | Gas sum     |
+| ---------------------------------- | ----------- |
+| Descriptor baseline                | 67,285,651  |
+| Descriptor MultiRLE                | 59,540,610  |
+| Descriptor MultiRLE SSTORE         | 28,079,493  |
+| Descriptor MultiRLE SSTORE Deflate | 14,368,017  |
+| Deflate tokenURI                   | 110,964,181 |
