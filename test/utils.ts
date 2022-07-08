@@ -14,6 +14,8 @@ import {
   NounsArtDeflate__factory,
   MultiRleNounsArt__factory,
   NounsArtDeflate,
+  NounsArtDeflateExternalPuff__factory,
+  NounsArtDeflateExternalPuff,
 } from "../typechain";
 import BaselineImageData from "../files/baseline-image-data.json";
 import MultiRleImageData from "../files/multi-rle-image-data.json";
@@ -165,6 +167,43 @@ export const deploySStoreDeflateNounsDescriptor = async (
   return { descriptor, art };
 };
 
+export const deploySStoreDeflateNounsDescriptorExternalPuff = async (
+  deployer?: SignerWithAddress
+): Promise<{
+  descriptor: SStoreDeflateNounsDescriptor;
+  art: NounsArtDeflateExternalPuff;
+}> => {
+  const signer = deployer || (await getSigners()).deployer;
+  const nounsArtFactory = new NounsArtDeflateExternalPuff__factory(signer);
+  const nftDescriptorFactory = await ethers.getContractFactory(
+    "contracts/sstore-deflate/libs/NFTDescriptor.sol:NFTDescriptor",
+    signer
+  );
+
+  const svgRendererFactory = new SVGRenderer__factory(signer);
+
+  const nftDescriptorLibrary = await nftDescriptorFactory.deploy();
+  const nounsDescriptorFactory = new SStoreDeflateNounsDescriptor__factory(
+    {
+      "contracts/sstore-deflate/libs/NFTDescriptor.sol:NFTDescriptor":
+        nftDescriptorLibrary.address,
+    },
+    signer
+  );
+
+  const renderer = await svgRendererFactory.deploy();
+  const descriptor = await nounsDescriptorFactory.deploy(
+    ZERO_ADDRESS,
+    renderer.address
+  );
+
+  // TODO: Clean up the intialization process
+  const art = await nounsArtFactory.deploy(descriptor.address);
+  await descriptor.setArt(art.address);
+
+  return { descriptor, art };
+};
+
 export const baselinePopulateDescriptor = async (
   nounsDescriptor: BaselineNounsDescriptor
 ): Promise<void> => {
@@ -284,18 +323,21 @@ const populateDeflate = async (
   } = dataToDescriptorInput(glasses.map(({ data }) => data));
 
   // Split up head and accessory population due to high gas usage
-  await Promise.all([
-    nounsDescriptor.addManyBackgrounds(bgcolors),
-    nounsDescriptor.setPalette(0, `0x000000${palette.join("")}`),
-    nounsDescriptor.setHeads(headsCompressed, headsLength, headsCount),
-    nounsDescriptor.setBodies(bodiesCompressed, bodiesLength, bodiesCount),
-    nounsDescriptor.setAccessories(
-      accessoriesCompressed,
-      accessoriesLength,
-      accessoriesCount
-    ),
-    nounsDescriptor.setGlasses(glassesCompressed, glassesLength, glassesCount),
-  ]);
+
+  await nounsDescriptor.addManyBackgrounds(bgcolors);
+  await nounsDescriptor.setPalette(0, `0x000000${palette.join("")}`);
+  await nounsDescriptor.setHeads(headsCompressed, headsLength, headsCount);
+  await nounsDescriptor.setBodies(bodiesCompressed, bodiesLength, bodiesCount);
+  await nounsDescriptor.setAccessories(
+    accessoriesCompressed,
+    accessoriesLength,
+    accessoriesCount
+  );
+  await nounsDescriptor.setGlasses(
+    glassesCompressed,
+    glassesLength,
+    glassesCount
+  );
 };
 
 function dataToDescriptorInput(data: string[]): {
